@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List
 from decimal import Decimal
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from uuid import UUID
 
 
@@ -44,9 +44,9 @@ class SettlementWindow(str, Enum):
 class TransactionRequest(BaseModel):
     """Incoming transaction for settlement."""
     transaction_id: str = Field(..., min_length=1, max_length=50)
-    amount: Decimal = Field(..., gt=0, decimal_places=2)
-    source_currency: str = Field(..., regex=r"^[A-Z]{3}$")
-    destination_currency: str = Field(..., regex=r"^[A-Z]{3}$")
+    amount: Decimal = Field(..., gt=0)
+    source_currency: str = Field(..., pattern=r"^[A-Z]{3}$")
+    destination_currency: str = Field(..., pattern=r"^[A-Z]{3}$")
     source_account: str = Field(..., min_length=1, max_length=50)
     destination_account: str = Field(..., min_length=1, max_length=50)
     counterparty_id: str = Field(..., min_length=1, max_length=50)
@@ -54,7 +54,8 @@ class TransactionRequest(BaseModel):
     settlement_window: SettlementWindow = SettlementWindow.RTGS
     metadata: Optional[dict] = Field(default_factory=dict)
 
-    @validator('source_currency', 'destination_currency')
+    @field_validator('source_currency', 'destination_currency')
+    @classmethod
     def validate_currency(cls, v):
         """Validate ISO 4217 currency codes."""
         valid_currencies = {
@@ -65,7 +66,8 @@ class TransactionRequest(BaseModel):
             raise ValueError(f'Unsupported currency: {v}')
         return v
 
-    @validator('transaction_id')
+    @field_validator('transaction_id')
+    @classmethod
     def validate_transaction_id(cls, v):
         """Ensure transaction ID follows naming conventions."""
         if not v.replace('-', '').replace('_', '').isalnum():
@@ -89,8 +91,8 @@ class SettlementBatch(BaseModel):
     batch_id: str = Field(..., min_length=1, max_length=50)
     status: BatchStatus = BatchStatus.CREATED
     transactions: List[str] = Field(default_factory=list)  # Transaction IDs
-    total_amount_usd: Decimal = Field(default=Decimal('0'), decimal_places=2)
-    optimization_cost_saved: Decimal = Field(default=Decimal('0'), decimal_places=2)
+    total_amount_usd: Decimal = Field(default=Decimal('0'))
+    optimization_cost_saved: Decimal = Field(default=Decimal('0'))
     currency_pairs: List[tuple] = Field(default_factory=list)  # [(USD, EUR), ...]
     created_at: datetime = Field(default_factory=datetime.utcnow)
     settled_at: Optional[datetime] = None
