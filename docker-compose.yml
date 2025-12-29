@@ -120,14 +120,9 @@ services:
         condition: service_healthy
       kafka:
         condition: service_started
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - settlement_network
-    command: python -m src.settlement_engine.main
+    command: python -m uvicorn src.settlement_engine.main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   postgres_data:
