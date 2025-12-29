@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -57,36 +55,13 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_LOG_RETENTION_HOURS: 24
     ports:
       - "9092:9092"
-    healthcheck:
-      test: kafka-broker-api-versions.sh --bootstrap-server kafka:9092
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - settlement_network
-
-  # etcd for Consensus/Raft
-  etcd:
-    image: quay.io/coreos/etcd:v3.5.10
-    environment:
-      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
-      ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
-      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd:2380
-      ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
-      ETCD_INITIAL_CLUSTER: etcd=http://etcd:2380
-    ports:
-      - "2379:2379"
-      - "2380:2380"
-    healthcheck:
-      test: ["CMD", "etcdctl", "--endpoints=http://localhost:2379", "endpoint", "health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - settlement_network
 
@@ -135,9 +110,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      ETCD_ENDPOINTS: http://etcd:2379
       LOG_LEVEL: INFO
-      WORKERS: 4
+      WORKERS: 2
       PORT: 8000
     depends_on:
       postgres:
@@ -145,9 +119,7 @@ services:
       redis:
         condition: service_healthy
       kafka:
-        condition: service_healthy
-      etcd:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 10s
