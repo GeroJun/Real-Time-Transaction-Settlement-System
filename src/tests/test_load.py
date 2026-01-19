@@ -14,7 +14,7 @@ import json
 class SettlementLoadTest(HttpUser):
     """Load test for settlement system."""
     
-    wait_time = between(0.1, 0.5)  # Random wait between 100-500ms
+    wait_time = between(0.1, 0.5) 
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -45,7 +45,7 @@ class SettlementLoadTest(HttpUser):
             json=payload,
             catch_response=True
         ) as response:
-            if response.status_code in [201, 409]:  # Created or Conflict (duplicate)
+            if response.status_code in [201, 409]:  
                 response.success()
             else:
                 response.failure(f"Unexpected status: {response.status_code}")
@@ -97,7 +97,6 @@ def print_stats(environment, **kwargs):
     print("LOAD TEST SUMMARY")
     print("="*70)
     
-    # Access request stats
     for name, stats in sorted(environment.stats.entries.items()):
         total = stats.num_requests
         failures = stats.num_failures
@@ -112,6 +111,4 @@ def print_stats(environment, **kwargs):
                 f"P95: {stats.get_response_time_percentile(0.95):7.2f}ms"
             )
 
-
-# Hook for test completion
 events.test_stop.add_listener(print_stats)

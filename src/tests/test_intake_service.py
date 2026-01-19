@@ -6,8 +6,6 @@ from unittest.mock import MagicMock, patch
 import redis
 from kafka import KafkaProducer
 from pydantic import ValidationError
-
-# ✅ Absolute imports
 from src.settlement_engine.models import TransactionRequest, TransactionStatus
 from src.settlement_engine.services.intake_service import IntakeService
 
@@ -21,7 +19,6 @@ def mock_redis():
 @pytest.fixture
 def intake_service(mock_redis):
     """Create intake service with mocks."""
-    # PATCH: Prevent the real KafkaProducer from trying to connect
     with patch.object(KafkaProducer, '__init__', lambda x, **kwargs: None):
         service = IntakeService(
             redis_client=mock_redis,
@@ -34,7 +31,6 @@ def intake_service(mock_redis):
 class TestTransactionValidation:
     """Test transaction validation."""
 
-    # ✅ USE FIXTURE: Pass 'intake_service' here
     def test_valid_transaction(self, intake_service):
         """Test valid transaction passes validation."""
         request = TransactionRequest(
@@ -48,16 +44,14 @@ class TestTransactionValidation:
             idempotency_key="req_001"
         )
         
-        # Should not raise
         intake_service._validate_transaction(request)
 
-    # ✅ HANDLE ERROR: Catch the validation error properly
     def test_invalid_amount(self):
         """Test negative amount fails validation."""
         with pytest.raises(ValidationError):
             TransactionRequest(
                 transaction_id="txn_001",
-                amount=Decimal('-100.00'),  # Invalid
+                amount=Decimal('-100.00'), 
                 source_currency="USD",
                 destination_currency="EUR",
                 source_account="acc_001",
@@ -66,7 +60,6 @@ class TestTransactionValidation:
                 idempotency_key="req_001"
             )
 
-    # ✅ USE FIXTURE: Pass 'intake_service' here
     def test_same_source_destination(self, intake_service):
         """Test same source and destination account fails."""
         request = TransactionRequest(
@@ -75,7 +68,7 @@ class TestTransactionValidation:
             source_currency="USD",
             destination_currency="USD",
             source_account="acc_001",
-            destination_account="acc_001",  # Same as source
+            destination_account="acc_001", 
             counterparty_id="bank_a",
             idempotency_key="req_001"
         )
@@ -89,7 +82,7 @@ class TestTransactionValidation:
             TransactionRequest(
                 transaction_id="txn_001",
                 amount=Decimal('1000.00'),
-                source_currency="XYZ",  # Invalid
+                source_currency="XYZ",
                 destination_currency="USD",
                 source_account="acc_001",
                 destination_account="acc_002",
@@ -112,8 +105,7 @@ class TestDeduplication:
     def test_duplicate_detection(self, intake_service, mock_redis):
         """Test duplicate detection via Redis."""
         import json
-        
-        # Setup mock to return a cached transaction
+
         cached_txn = {
             "transaction_id": "txn_001",
             "amount": "1000.00",
@@ -141,7 +133,6 @@ class TestKafkaPublishing:
         """Test publishing transaction to Kafka."""
         from unittest.mock import AsyncMock, MagicMock
         
-        # Mock future
         future = MagicMock()
         future.get.return_value = MagicMock(topic="transactions.intake")
         intake_service.producer.send.return_value = future
@@ -151,7 +142,6 @@ class TestKafkaPublishing:
             "amount": "1000.00"
         }
         
-        # Should not raise
         await intake_service._publish_to_kafka(
             "transactions.intake",
             transaction
