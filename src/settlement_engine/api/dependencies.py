@@ -8,5 +8,4 @@ def get_intake_service(request: Request) -> IntakeService:
     This ensures we reuse the SAME Redis and Kafka connections 
     instead of opening new ones for every single request.
     """
-    # This 'intake_service' is the one we created in main.py's lifespan function
     return request.app.state.intake_service
