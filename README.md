@@ -63,11 +63,6 @@ curl -X POST http://localhost:8000/api/v1/transactions/ \
   "message": "Transaction queued for processing",
   "metadata": { "window": "t1" }
 }
-        Pydantic -->|3. Produce Event| Kafka[Apache Kafka]
-        Kafka -->|Topic: transactions| Consumers[Settlement Consumers]
-    end
-    
-    Consumers -->|4. Finalize| DB[(Settlement DB)]
 ```
 ### Idempotency Check (The "Double-Spend" Protection)
 ```bash
