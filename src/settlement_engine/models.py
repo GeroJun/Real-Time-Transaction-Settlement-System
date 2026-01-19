@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 class TransactionStatus(str, Enum):
     """Transaction settlement status."""
     SUBMITTED = "submitted"
-    DEDUPED = "deduped"  # ✅ Required for the fix
+    DEDUPED = "deduped"  
     BATCHED = "batched"
     CONSENSUS_PENDING = "consensus_pending"
     CONSENSUS_APPROVED = "consensus_approved"
@@ -74,7 +74,6 @@ class TransactionResponse(BaseModel):
     message: str = "Transaction queued for processing"
     batch_id: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    # ✅ CRITICAL FIX: This field prevents the crash on duplicates
     metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 class SettlementBatch(BaseModel):
